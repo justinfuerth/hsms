@@ -18,10 +18,10 @@ module.exports = (function () {
   class Decoder {
     decode(buffer) {
       let bb = ByteBuffer.wrap(buffer);
-			let m = null;
+      let m = null;
 
-			//console.log( bb );
-			
+      //console.log( bb );
+
       let device = bb.readUint16();
 
       let hb2 = bb.readUint8();
@@ -36,19 +36,19 @@ module.exports = (function () {
 
       switch (stype) {
         case Message.Type.DataMessage:
-          m = decodeDataMessage( bb, device, hb2, hb3, context ); 
+          m = decodeDataMessage(bb, device, hb2, hb3, context);
           break;
 
         case Message.Type.SelectReq:
-          m = new SelectReq( device, context );
+          m = new SelectReq(device, context);
           break;
 
         case Message.Type.SelectRsp:
           m = new SelectRsp(device, context, hb3);
-					break;
-					
-				case Message.Type.DeselectReq:
-          m = new DeselectReq( device, context );
+          break;
+
+        case Message.Type.DeselectReq:
+          m = new DeselectReq(device, context);
           break;
 
         case Message.Type.DeselectRsp:
@@ -68,7 +68,7 @@ module.exports = (function () {
           break;
 
         case Message.Type.RejectReq:
-          m = new RejectReq( device, context, hb3 );
+          m = new RejectReq(device, context, hb3);
           break;
       }
 
@@ -80,24 +80,24 @@ module.exports = (function () {
     }
   }
 
-  function decodeDataMessage( b, device, hb2, hb3, context ){
-    let senderExpectReply = (( hb2 & 128 ) == 0 );
+  function decodeDataMessage(b, device, hb2, hb3, context) {
+    let senderExpectReply = ((hb2 & 128) == 0);
 
-    let stream = ( hb2 & 127 );
+    let stream = (hb2 & 127);
     let func = hb3;
 
-    let items = decodeDataItems( b );
+    let items = decodeDataItems(b);
 
     let dmb = DataMessage
       .builder
-      .device( device )
-      .context( context )
-      .stream( stream )
-      .func( func )
-      .replyExpected( senderExpectReply );
+      .device(device)
+      .context(context)
+      .stream(stream)
+      .func(func)
+      .replyExpected(senderExpectReply);
 
-    if( items.length > 0 ){
-      dmb.items( ...items );
+    if (items.length > 0) {
+      dmb.items(...items);
     }
 
     let dm = dmb.build();
@@ -105,296 +105,309 @@ module.exports = (function () {
     return dm;
   }
 
-  function decodeDataItems( b ){
+  function decodeDataItems(b) {
     let items = [];
 
-    while( b.offset < b.limit )  {
-      let next = decodeDataItem( b );
-      items.push( next );
+    while (b.offset < b.limit) {
+      let next = decodeDataItem(b);
+      items.push(next);
     }
 
     return items;
   }
 
-  function decodeDataItem( b ){
+  function decodeDataItem(b) {
     let fb = b.readUint8();
 
     let MASK_KILL_NO_LEN_BYTES = 252;
     let MASK_NO_LEN_BYTES = 3;
 
-    let btFormatByteWithoutNoLenBytes = ( fb & MASK_KILL_NO_LEN_BYTES );
-    let iNoLenBytes = ( fb & MASK_NO_LEN_BYTES );
+    let btFormatByteWithoutNoLenBytes = (fb & MASK_KILL_NO_LEN_BYTES);
+    let iNoLenBytes = (fb & MASK_NO_LEN_BYTES);
 
-    let len = readVarLength( b, iNoLenBytes )
+    let len = readVarLength(b, iNoLenBytes)
 
-    switch( btFormatByteWithoutNoLenBytes ){
+    switch (btFormatByteWithoutNoLenBytes) {
+      case ItemFormat.Bin:
+        return decodeBin(b, len);
+
       case ItemFormat.A:
-        return DataItem.a( '', b.readString( len ), len );
+        return DataItem.a('', b.readString(len), len);
 
       case ItemFormat.List:
-        return decodeList( b, len );
+        return decodeList(b, len);
 
       case ItemFormat.Bool:
-        return decodeBool( b, len );
+        return decodeBool(b, len);
 
       case ItemFormat.I1:
-        return decodeI1( b, len );
+        return decodeI1(b, len);
 
       case ItemFormat.I2:
-        return decodeI2( b, len );
+        return decodeI2(b, len);
 
       case ItemFormat.I4:
-        return decodeI4( b, len );
+        return decodeI4(b, len);
 
       case ItemFormat.I8:
-        return decodeI8( b, len );
+        return decodeI8(b, len);
 
       case ItemFormat.U1:
-        return decodeU1( b, len );
+        return decodeU1(b, len);
 
       case ItemFormat.U2:
-        return decodeU2( b, len );
+        return decodeU2(b, len);
 
       case ItemFormat.U4:
-        return decodeU4( b, len );
+        return decodeU4(b, len);
 
       case ItemFormat.U8:
-        return decodeU8( b, len );
+        return decodeU8(b, len);
 
       case ItemFormat.F4:
-        return decodeF4( b, len );
+        return decodeF4(b, len);
 
       case ItemFormat.F8:
-        return decodeF8( b, len );
+        return decodeF8(b, len);
     }
   }
 
-  function decodeList( b, len ){
+  function decodeBin(b, len) {
     let items = [];
 
-    for( let i = 0; i < len; ++i ){
-      items.push( decodeDataItem( b ) )
+    for(let i = 0; i < len; i++) {
+      items.push(b.readUint8())
     }
 
-    return DataItem.list( "", ...items )
+    return DataItem.bin("", Buffer.from(items), items.length);
   }
 
-  function decodeBool( b, len ){
+  function decodeList(b, len) {
+    let items = [];
+
+    for (let i = 0; i < len; ++i) {
+      items.push(decodeDataItem(b))
+    }
+
+    return DataItem.list("", ...items)
+  }
+
+  function decodeBool(b, len) {
     let nominalLen = 1;
 
-    if( nominalLen === len ){
-      return DataItem.bool( '', b.readUint8() > 0  );
+    if (nominalLen === len) {
+      return DataItem.bool('', b.readUint8() > 0);
     } else {
       var count = len / nominalLen;
       var arr = [];
 
-      for( let i = 0; i < count; ++i ){
-        arr.push( b.readUint8() > 0 );
+      for (let i = 0; i < count; ++i) {
+        arr.push(b.readUint8() > 0);
       }
 
-      return DataItem.bool( '', ...arr );
+      return DataItem.bool('', ...arr);
     }
   }
 
-  function decodeI1( b, len ){
+  function decodeI1(b, len) {
     let nominalLen = 1;
 
-    if( nominalLen === len ){
-      return DataItem.i1( '', b.readInt8() );
+    if (nominalLen === len) {
+      return DataItem.i1('', b.readInt8());
     } else {
       var count = len / nominalLen;
       var arr = [];
 
-      for( let i = 0; i < count; ++i ){
-        arr.push( b.readInt8() );
+      for (let i = 0; i < count; ++i) {
+        arr.push(b.readInt8());
       }
 
-      let di = DataItem.i1( '', ...arr );
+      let di = DataItem.i1('', ...arr);
 
       return di;
     }
   }
 
-  function decodeU1( b, len ){
+  function decodeU1(b, len) {
     let nominalLen = 1;
 
-    if( nominalLen === len ){
-      return DataItem.u1( '', b.readUint8() );
+    if (nominalLen === len) {
+      return DataItem.u1('', b.readUint8());
     } else {
       var count = len / nominalLen;
       var arr = [];
 
-      for( let i = 0; i < count; ++i ){
-        arr.push( b.readUint8() );
+      for (let i = 0; i < count; ++i) {
+        arr.push(b.readUint8());
       }
 
-      return DataItem.u1( '', ...arr );
+      return DataItem.u1('', ...arr);
     }
   }
 
-  function decodeI2( b, len ){
+  function decodeI2(b, len) {
     let nominalLen = 2;
 
-    if( nominalLen === len ){
-      return DataItem.i2( '', b.readInt16() );
+    if (nominalLen === len) {
+      return DataItem.i2('', b.readInt16());
     } else {
       var count = len / nominalLen;
       var arr = [];
 
-      for( let i = 0; i < count; ++i ){
-        arr.push( b.readInt16() );
+      for (let i = 0; i < count; ++i) {
+        arr.push(b.readInt16());
       }
 
-      let di = DataItem.i2( '', ...arr );
+      let di = DataItem.i2('', ...arr);
 
       return di;
     }
   }
 
-  function decodeU2( b, len ){
+  function decodeU2(b, len) {
     let nominalLen = 2;
 
-    if( nominalLen === len ){
-      return DataItem.u2( '', b.readUint16() );
+    if (nominalLen === len) {
+      return DataItem.u2('', b.readUint16());
     } else {
       var count = len / nominalLen;
       var arr = [];
 
-      for( let i = 0; i < count; ++i ){
-        arr.push( b.readUint16() );
+      for (let i = 0; i < count; ++i) {
+        arr.push(b.readUint16());
       }
 
-      return DataItem.u2( '', ...arr );
+      return DataItem.u2('', ...arr);
     }
   }
 
-  function decodeI4( b, len ){
+  function decodeI4(b, len) {
     let nominalLen = 4;
 
-    if( nominalLen === len ){
-      return DataItem.i4( '', b.readInt32() );
+    if (nominalLen === len) {
+      return DataItem.i4('', b.readInt32());
     } else {
       var count = len / nominalLen;
       var arr = [];
 
-      for( let i = 0; i < count; ++i ){
-        arr.push( b.readInt32() );
+      for (let i = 0; i < count; ++i) {
+        arr.push(b.readInt32());
       }
 
-      return DataItem.i4( '', ...arr );
+      return DataItem.i4('', ...arr);
     }
   }
 
-  function decodeU4( b, len ){
+  function decodeU4(b, len) {
     let nominalLen = 4;
 
-    if( nominalLen === len ){
-      return DataItem.u4( '', b.readUint32() );
+    if (nominalLen === len) {
+      return DataItem.u4('', b.readUint32());
     } else {
       var count = len / nominalLen;
       var arr = [];
 
-      for( let i = 0; i < count; ++i ){
-        arr.push( b.readUint32() );
+      for (let i = 0; i < count; ++i) {
+        arr.push(b.readUint32());
       }
 
-      return DataItem.u4( '', ...arr );
+      return DataItem.u4('', ...arr);
     }
   }
 
-  function decodeI8( b, len ){
+  function decodeI8(b, len) {
     let nominalLen = 8;
 
-    if( nominalLen === len ){
-      return DataItem.i8( '', b.readInt64() );
+    if (nominalLen === len) {
+      return DataItem.i8('', b.readInt64());
     } else {
       var count = len / nominalLen;
       var arr = [];
 
-      for( let i = 0; i < count; ++i ){
-        arr.push( b.readInt64() );
+      for (let i = 0; i < count; ++i) {
+        arr.push(b.readInt64());
       }
 
-      return DataItem.i8( '', ...arr );
+      return DataItem.i8('', ...arr);
     }
   }
-  
-  function decodeU8( b, len ){
+
+  function decodeU8(b, len) {
     let nominalLen = 8;
 
-    if( nominalLen === len ){
-      return DataItem.u8( '', b.readUint64() );
+    if (nominalLen === len) {
+      return DataItem.u8('', b.readUint64());
     } else {
       var count = len / nominalLen;
       var arr = [];
 
-      for( let i = 0; i < count; ++i ){
-        arr.push( b.readUint64() );
+      for (let i = 0; i < count; ++i) {
+        arr.push(b.readUint64());
       }
 
-      return DataItem.u8( '', ...arr );
+      return DataItem.u8('', ...arr);
     }
   }
 
-  function decodeF4( b, len ){
+  function decodeF4(b, len) {
     let nominalLen = 4;
 
-    if( nominalLen === len ){
-			// https://stackoverflow.com/questions/42699162/javascript-convert-array-of-4-bytes-into-a-float-value-from-modbustcp-read#comment92169146_42699667
-			var v = +b.readFloat32().toPrecision( 7 )// toFixed( 7 );
-			 
-			var item = DataItem.f4( '', v );
-			
+    if (nominalLen === len) {
+      // https://stackoverflow.com/questions/42699162/javascript-convert-array-of-4-bytes-into-a-float-value-from-modbustcp-read#comment92169146_42699667
+      var v = +b.readFloat32().toPrecision(7)// toFixed( 7 );
+
+      var item = DataItem.f4('', v);
+
       return item;
     } else {
       var count = len / nominalLen;
       var arr = [];
 
-      for( let i = 0; i < count; ++i ){
-        arr.push( b.readFloat32() );
+      for (let i = 0; i < count; ++i) {
+        arr.push(b.readFloat32());
       }
 
-      return DataItem.f4( '', ...arr );
+      return DataItem.f4('', ...arr);
     }
-	}
-	
-	function bytesToFloat(bytes) {
+  }
+
+  function bytesToFloat(bytes) {
     // JavaScript bitwise operators yield a 32 bits integer, not a float.
     // Assume LSB (least significant byte first).
-    var bits = bytes[3]<<24 | bytes[2]<<16 | bytes[1]<<8 | bytes[0];
-    var sign = (bits>>>31 === 0) ? 1.0 : -1.0;
-    var e = bits>>>23 & 0xff;
-    var m = (e === 0) ? (bits & 0x7fffff)<<1 : (bits & 0x7fffff) | 0x800000;
+    var bits = bytes[3] << 24 | bytes[2] << 16 | bytes[1] << 8 | bytes[0];
+    var sign = (bits >>> 31 === 0) ? 1.0 : -1.0;
+    var e = bits >>> 23 & 0xff;
+    var m = (e === 0) ? (bits & 0x7fffff) << 1 : (bits & 0x7fffff) | 0x800000;
     var f = sign * m * Math.pow(2, e - 150);
     return f;
-	}  
-	
-  function decodeF8( b, len ){
+  }
+
+  function decodeF8(b, len) {
     let nominalLen = 8;
 
-    if( nominalLen === len ){
-      return DataItem.f8( '', b.readFloat64() );
+    if (nominalLen === len) {
+      return DataItem.f8('', b.readFloat64());
     } else {
       var count = len / nominalLen;
       var arr = [];
 
-      for( let i = 0; i < count; ++i ){
-        arr.push( b.readFloat64() );
+      for (let i = 0; i < count; ++i) {
+        arr.push(b.readFloat64());
       }
 
-      return DataItem.f8( '', ...arr );
+      return DataItem.f8('', ...arr);
     }
   }
 
-  function readVarLength( b, iNoLenBytes ){
+  function readVarLength(b, iNoLenBytes) {
     let lenArr = []
 
-    for( var i = 0; i < iNoLenBytes; ++i ){
-      lenArr.push( b.readUint8());
+    for (var i = 0; i < iNoLenBytes; ++i) {
+      lenArr.push(b.readUint8());
     }
 
-    while( iNoLenBytes < 4 ){
-      lenArr.splice( 0, 0, 0 );
+    while (iNoLenBytes < 4) {
+      lenArr.splice(0, 0, 0);
       ++iNoLenBytes;
     }
 

@@ -6,7 +6,7 @@
   "scripts": {
     "test": "mocha --recursive",
     "testc": "npm test -- --grep \"Communication passive\"",
-    "test-file": "npm test -- --grep \"Data Item Bool\"",
+    "test-file": "npm test -- --grep \"Data Item Bin\"",
     "test-with-coverage": "nyc --reporter=text  mocha --recursive",
     "cover": "node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- --recursive test/*",
     "start": "node index.js",

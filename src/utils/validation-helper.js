@@ -68,6 +68,10 @@ class ValidationHelper {
 		return (typeof b === 'boolean' || b instanceof Boolean );
 	}
 
+	static isBuffer(b) {
+		return (typeof b === 'buffer' || b instanceof Buffer );
+	}
+
 	static isUndefined(f) {
 		return typeof f === "undefined"
 	}
@@ -120,6 +124,47 @@ class ValidationHelper {
 
 		try {
 			switch (format) {
+				case ItemFormat.Bin:
+					if (ValidationHelper.isUndefined(size) || !Number.isInteger(size)) {
+						throw new InvalidItemSizeError();
+					}
+
+					if (ValidationHelper.isString(value)) {
+						res = Buffer.from(value, 'utf-8');
+					}
+
+					if (ValidationHelper.isNumber(value)) {
+						const psv = parseInt(value);
+						let buff_array = [];
+						let val = 0;
+						if (!isNaN(psv) && isFinite(psv)) {
+							for(let i = 0; i < size; i++) {
+								val = (psv >> (i * 8)) & 0xFF
+								buff_array.push(val);
+							}
+							res = Buffer.from(buff_array);
+						}
+					}
+
+					if (ValidationHelper.isBuffer(value)) {
+						res = value
+					}
+
+					if (value == null) {
+						res = Buffer.from([])
+					}
+
+					if(res.length < size) {
+						let addBuff = [];
+						for(var i = 0; i < (size - res.length); i++) {
+							addBuff.push(0)
+						}
+						res = Buffer.concat([res, Buffer.from(addBuff)])
+					}
+
+					res = res.slice(0, size)
+					break;
+
 				case ItemFormat.Bool:
 					res = value ? true : false; // ?? 
 					break;

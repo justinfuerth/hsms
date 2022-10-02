@@ -20,28 +20,28 @@ module.exports = (function () {
 		U1: 164, // 1 byte integer
 
 		isSizeable(n) {
-      switch (n) {
-        case this.Bin:
-        case this.A:
-          return true;
+			switch (n) {
+				case this.Bin:
+				case this.A:
+					return true;
 
-        default:
-          return false;
-      }
+				default:
+					return false;
+			}
 		},
 
 		isString(n) {
-      switch (n) {
-        case this.A:
-          return true;
+			switch (n) {
+				case this.A:
+					return true;
 
-        default:
-          return false;
-      }
+				default:
+					return false;
+			}
 		},
-		
+
 		isInteger(n) {
-      switch (n) {
+			switch (n) {
 				case ItemFormat.I1:
 				case ItemFormat.I2:
 				case ItemFormat.I4:
@@ -50,46 +50,64 @@ module.exports = (function () {
 				case ItemFormat.U2:
 				case ItemFormat.U4:
 				case ItemFormat.U8:
-          return true;
+					return true;
 
-        default:
-          return false;
-      }
+				default:
+					return false;
+			}
 		},
 
-			
+
 		isFloat(n) {
-      switch (n) {
+			switch (n) {
 				case ItemFormat.F4:
 				case ItemFormat.F8:
-          return true;
+					return true;
 
-        default:
-          return false;
-      }
+				default:
+					return false;
+			}
 		},
 
 		isBoolean(n) {
-      switch (n) {
+			switch (n) {
 				case ItemFormat.Bool:
-          return true;
+					return true;
 
-        default:
-          return false;
-      }
+				default:
+					return false;
+			}
 		},
-		
-		default( n, size = 0 ){
-			if( this.isInteger( n ) || this.isFloat( n )){
+
+		isBinary(n) {
+			switch (n) {
+				case ItemFormat.Bin:
+					return true;
+				
+				default:
+					return false;
+			}
+		},
+
+		default(n, size = 0) {
+			if (this.isInteger(n) || this.isFloat(n)) {
 				return 0;
 			}
 
-			if( this.isBoolean( n ) ){
+			if (this.isBoolean(n)) {
 				return false;
 			}
 
-			if( this.isString( n ) ){
-				return ''.padEnd( size, ' ' );
+			if (this.isString(n)) {
+				return ''.padEnd(size, ' ');
+			}
+
+			if (this.isBinary(n)) {
+				let arr = [];
+				for(let i = 0; i < size; i++) {
+					arr.push(0);
+				}
+				return Buffer.from(arr);
 			}
 
 			return null;
