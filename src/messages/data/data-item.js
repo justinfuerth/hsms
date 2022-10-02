@@ -77,6 +77,10 @@ module.exports = (function () {
 					let base = `${indent}${key}<${len}> ${this.name}`;
 					return + (!this.value) ? base : `${base} [${this.value}]`;
 
+				case ItemFormat.Bin:
+					let base2 = `${indent}${key}<${len}> ${this.name}`;
+					return + (!this.value) ? base2 : `${base2} [${Uint8Array.from(this.value)}]`;
+
 				case ItemFormat.List:
 					let str = `${key} ${this.name}`;
 					this.value.forEach(x => str += '\n' + indent + x.toString(indent + "  "))

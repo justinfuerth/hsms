@@ -273,5 +273,11 @@ describe('Data Item Bin', () => {
 		Buffer.compare(item.items[0].value, Buffer.from([0x01, 0x02, 0x03])).should.equal(0);
 	});
 
+	it('should return string representation using toString()', () => {
+		const item = DataItem.bin('', Buffer.from([0x01, 0x02]), 2);
+		const item_str = item.toString();
+
+		expect(item_str).equal("Bin<2>  [1,2]");
+	});
 
 });
