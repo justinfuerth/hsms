@@ -274,10 +274,10 @@ describe('Data Item Bin', () => {
 	});
 
 	it('should return string representation using toString()', () => {
-		const item = DataItem.bin('', Buffer.from([0x01, 0x02]), 2);
+		const item = DataItem.bin('', Buffer.from([0x01, 0x02, 0x03]), 3);
 		const item_str = item.toString();
 
-		expect(item_str).equal("Bin<2>  [1,2]");
+		expect(item_str).equal("Bin<3>  [0x01, 0x02, 0x03]");
 	});
 
 });

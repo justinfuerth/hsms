@@ -79,7 +79,14 @@ module.exports = (function () {
 
 				case ItemFormat.Bin:
 					let base2 = `${indent}${key}<${len}> ${this.name}`;
-					return + (!this.value) ? base2 : `${base2} [${Uint8Array.from(this.value)}]`;
+
+					let valueStr = '';
+					for(let i = 0; i < this.value.length; i++) {
+						valueStr += `0x${this.value[i].toString(16).padStart(2, '0')}`
+						if( i < this.value.length - 1) { valueStr += ', ' }
+					}
+
+					return + (!this.value) ? base2 : `${base2} [${valueStr}]`;
 
 				case ItemFormat.List:
 					let str = `${key} ${this.name}`;
@@ -168,7 +175,7 @@ module.exports = (function () {
 		 * @param {numeric} size Item size.
 		 * @param  {...any} values Item value(s) for initialization. Single numeric value or numeric array can be passed.
 		 */
-		 static bin(name = "", v, size = 0) {
+		static bin(name = "", v, size = 0) {
 			return DataItem
 				.builder
 				.format(ItemFormat.Bin)
