@@ -81,7 +81,7 @@ module.exports = (function () {
   }
 
   function decodeDataMessage(b, device, hb2, hb3, context) {
-    let senderExpectReply = ((hb2 & 128) == 0);
+    let senderExpectReply = ((hb2 & 128) != 0);
 
     let stream = (hb2 & 127);
     let func = hb3;

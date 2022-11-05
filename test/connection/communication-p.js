@@ -539,6 +539,8 @@ describe('Communication passive', () => {
 
 		server.on("recv", mRecv => {
 			if (mRecv.kind == Message.Type.DataMessage) {
+				// console.log(JSON.stringify(mRecv));
+				// console.log(JSON.stringify(messages[ index ]));
 				if (mRecv.equals(messages[ index ] ) ) {
 					server.send( replies[ index++ ] )
 				} 

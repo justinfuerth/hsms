@@ -344,7 +344,7 @@ module.exports = (function () {
 		b.writeUint16(m.device);
 		b.LE();
 
-		let wbit = ((m.replyExpected) ? 0 : 128);
+		let wbit = ((m.replyExpected) ? 128 : 0);
 
 		b.writeUInt8(wbit | m.stream);
 
